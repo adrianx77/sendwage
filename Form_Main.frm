@@ -331,6 +331,8 @@ Private Sub BtnSend_Click()
     start_timer
 End Sub
 
+
+
 Private Sub btnStop_Click()
     stop_timer
 End Sub
@@ -399,7 +401,7 @@ Private Sub LoadExcelFile(ExcelPath As String)
 
 Private Sub Form_Terminate()
 
-    SaveIni
+
     If (Not ThisWorkbook Is Nothing) Then
         ThisWorkbook.Save
     End If
@@ -444,6 +446,10 @@ End Function
 
 
 
+Private Sub Form_Unload(Cancel As Integer)
+    SaveIni
+End Sub
+
 Private Sub TaskCheckTimer_Timer()
     
     If (Not IsLeftRowSend) Or StopSend Then
@@ -462,13 +468,18 @@ Private Sub TaskCheckTimer_Timer()
 End Sub
 
 Private Function getPostFixNumber(s As String) As Integer
+    getPostFixNumber = 0
     L = Len(s)
-    For I = L - 1 To 0
+    For I = L To 0 Step -1
         If Not IsNumeric(Mid(s, I, 1)) Then
-            getPostFixNumber = Int(Val(Mid(s, I)))
+            S1 = Mid(s, I + 1)
+            getPostFixNumber = Int(Val(S1))
+            If getPostFixNumber <> 0 Then
+                Exit Function
+            End If
+                
         End If
     Next
-    getPostFixNumber = 0
 End Function
 
 Private Sub sendOneMail()
@@ -495,14 +506,14 @@ Private Sub sendOneMail()
             
             
         
-        If SendExcel(TmpFile, txYear.Text, txMonth.Text, txMail.Text, txName.Text) Then
-            Dim delRow  As Integer
-            delRow = getPostFixNumber(txAttachRange.Text)
-            If delRow <> 0 Then
-              DeleteSentRow delRow
-            End If
-         End If
+        SendExcel TmpFile, txYear.Text, txMonth.Text, txMail.Text, txName.Text
             
+    End If
+    
+    Dim delRow  As Integer
+    delRow = getPostFixNumber(txAttachRange.Text)
+    If delRow <> 0 Then
+       DeleteSentRow delRow
     End If
     
 End Sub
@@ -532,7 +543,9 @@ Private Sub MakeRangeExcel(NewFile As String, strPass As String, strName As Stri
         Col = Col + ThisRange.Columns.Count
     Next
     
-    newBook.Password = strPass
+    If Len(strPass) <> 0 Then
+        newBook.Password = strPass
+    End If
     newBook.SaveAs NewFile, , , , , , , xlLocalSessionChanges
     newBook.Close False
     
@@ -555,7 +568,7 @@ Private Function SendExcel(strExcelFile As String, Year As String, Month As Stri
 '    如有问题您可以随时与财务部联系，我们会尽快处理您的问题并答复结果。
 '                                 财务部 $NOW_TIME$
     
-    strContent = Replace(txMessage, "$NAME$", strName)
+    strContent = Replace(txMessage.Text, "$NAME$", strName)
     
     strContent = Replace(strContent, "$YEAR$", Year)
     strContent = Replace(strContent, "$MONTH$", Month)
